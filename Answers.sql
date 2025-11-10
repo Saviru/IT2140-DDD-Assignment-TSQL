@@ -168,6 +168,7 @@ drop view v_engineering_employees;
 -- Part 5
 -- ====================
 
+-- 1.
 create function getTotalHours(@eid int) returns int as
 begin
     declare @tolH int
@@ -180,7 +181,7 @@ declare @funcR int
 exec @funcR=getTotalHours 2;
 print @funcR
 
-
+-- 2.
 create procedure assignProject(@empId int, @projId int) as
 begin
 	insert into works_on(eid, pid, hours_worked)
@@ -192,6 +193,7 @@ exec @procR=assignProject 4,1;
 print @procR
 select * from works_on;
 
+-- 3.
 create procedure getDeptStats(@dname varchar, @did int output, @budget float output, @tol int output) as
 begin
 	select @did=d.did, @budget=d.budget, @tol=COUNT(e.eid) from department d
@@ -205,6 +207,7 @@ print @procR11
 print @procR12
 print @procR13
 
+-- 4.
 create trigger  trg_AuditSalary2
 on Employee
 after update as
@@ -228,6 +231,7 @@ WHERE eid = 3;
 
 select * from Salary_Audit
 
+-- 5.
 create trigger  trg_SafeDeleteDept
 on department
 instead of delete, update as
@@ -243,10 +247,35 @@ begin
 	print 'Department removed and employees unassigned.';
 end;
 
-
-
 delete from department where did = 1
 
 select * from department
 select * from employee
 
+-- 6.
+create trigger checkEmployee
+on employee
+after insert, update as
+begin
+	set nocount on;
+	if EXISTS(
+		select 1 from inserted i
+		join department d on i.did=d.did
+		join employee e on d.managerId=e.eid 
+		where i.salary>e.salary
+	)
+	begin
+		RAISERROR('No employee can have a salary greater than their manager.', 16, 1);
+		rollback transaction;
+	end;
+end;
+
+
+insert into employee values (7,'Jason',24,7000000,2);
+
+select * from employee;
+
+-- ======= END ========
+
+-- *Please run each procedure and function in a seperate batch(queries) when creating them. 
+-- Copyright © Saviru Kashmira Atapattu
